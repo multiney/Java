@@ -474,4 +474,16 @@ create table student(
       2. 定义配置文件
          1. 是properties形式
          2. 可以是任意名称，任意路径
-      3. 获取数据库连接池对象：通过工厂类来获取 
+      3. 获取数据库连接池对象：通过工厂类来获取 `DataSource ds = DruidDataSourceFactory.createDataSource(pro)`
+      4. 获取连接：`getConnection`
+   2. 定义工具类
+      1. 定义一个类JDBCUtils
+      2. 提供方法
+         1. 获取连接方法：通过数据库连接池获取连接
+
+## Spring JDBC
+
+* Spring框架对JDBC的简单封装。提供了JDBCTemplate对象简化JDBC的开发
+* 步骤
+  1. 导入jar包
+  2. 
