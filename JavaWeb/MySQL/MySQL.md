@@ -350,6 +350,8 @@ create table student(
 
 * 快速入门
   1. 导入驱动jar包
+     1. 复制mysql-connector-java-version-bin.jar到项目的libs目录下
+     2. add as library
   2. 注册驱动
   3. 获取数据库连接对象Connection
   4. 定义SQL
@@ -357,3 +359,119 @@ create table student(
   6. 执行SQL，接受返回结果
   7. 处理结果
   8. 释放资源
+
+* 详解：
+  1. DriverManager：驱动管理对象
+     1. 功能：
+        1. 注册驱动: 告诉程序该使用哪一个数据库驱动jar
+            ```java
+            //attention:mysql5后的驱动jar包可省略注册驱动的步骤
+            static void registerDriver(Driver driver);
+            Class.forname("com.mysql.jdbc.Driver");//写代码时使用
+            //在"com.mysql.jdbc.Driver"类中存在静态代码块
+            static {
+                try {
+                    java.sql.DriverManager.registerDriver(new Driver());
+                } catch {
+                    throw new RuntimeException("Can't register driver!");
+                }
+            }
+            ```
+        2. 获取数据库连接：
+           1. `static Connection getConnection(String url, String user, String password)`
+           2. 参数：
+              1. url：指定连接的路径
+                 1. 语法：`jdbc:mysql://ip(域名):port/database`
+              2. user
+              3. password
+  2. Connection：数据库连接对象
+     1. 功能：
+        1. 获取执行SQL的对象
+           1. `Statement createStatenment()`
+           2. `PreparedStatement prepareStatement(String sql)`
+     2. 管理事务
+        1. 开启事务：`void setAutoCommit(boolean autoCommit)`:调用该方法设置参数为false，即开启事务
+        2. 提交事务：`commit()`
+        3. 回滚：`rollback()`
+  3. Statement:执行sql对象
+     1. `boolean execute(String sql)`可执行任意的sql语句
+     2. `int executeUpadate(String sql)`执行DML（insert,update,delete),DDL(create, alter, drop));返回影响行数
+     3. `ResultSet executeQuery(String sql)`：执行DQL(select)语句；
+  4. ResultSet:结果集对象，封装结果信息
+     1. `next();`游标向下移一行
+     2. `getXXX(param)`获取数据，
+        1. xxx表示数据类型
+        2. param：
+           1. int: 代表列的编号，从1开始
+           2. String: 代表列名称 
+     3. attention:
+        1. 游标向下一行
+        2. 判断是否有数据
+        3. 获取数据
+  5. PreparedStatement:执行sql的对象
+     1. SQL注入问题：在拼接SQL时，一些SQL特殊关键字参与字符串的拼接，会造成安全性问题。
+        1. 解决：使用PreparedStatement解决
+     2. 预编译的SQL：参数使用？作为占位符
+     3. 步骤：
+        1. 导入jar包
+        2. 注册驱动
+        3. 获取数据库连接Connection
+        4. 定义sql： sql参数使用?作为占位符
+        5. 获取执行sql语句的对象PreparedStatement
+        6. 给?赋值
+           1. pstmt.setXXX(index, param);
+        7. 执行sql
+        8. 处理结果
+        9.  释放资源
+     4. 优势：
+        1. 防止sql注入
+        2. 效率更高
+
+## 抽取JDBC工具类：JDBCUTILS
+
+* 目的：简化书写
+* 分析：
+  1. 注册驱动抽取
+  2. 抽取一个方法获取连接对象
+     1. 通过配置文件保证工具类的通用性，不必传递参数
+  3. 抽取一个方法释放资源
+
+
+## JDBC控制事务：
+
+* 使用Connection对象管理事务
+  1. 开启事务：setAutoCommit(boolean autoCommit):调用该方法设置参数为false，即开启事务
+  2. 提交事务：commit()
+  3. 回滚事务：rollback()
+
+## 数据库连接池
+
+* 概念：其实是一个容器（集合），存放数据库连接的容器
+* 好处：
+  * 节约资源
+  * 高效
+* 实现：
+  1. 标准接口：DataSource 
+     1. 方法：
+        * 获取连接：`getConnection()`
+        * 归还连接：如果连接对象Connection是从连接池中获取的，那么调用Connection.close()不会关闭连接而是归还。
+  2. 实现技术
+     1. C3P0：数据库连接池技术
+     2. Druid：数据库连接池技术
+
+1. C3P0:
+   * 步骤：
+     1. 导入jar包（两个），c3p0-version.jar, machange-commons-java-0.2.12.jar，不要忘记导入数据库驱动jar包
+     2. 定义配置文件：
+        * 名称：c3p0.properties or c3p0-config.xml
+          * 在config.xml中的jdbcURL加上`useSSL=false`
+        * 路径：将文件放在src目录下即可
+     3. 创建核心对象 数据库连接池对象 ComboPooledDataSource`DataSource ds = new ComboPooledDataSource();`
+     4. 获取连接：getConnection `Connection conn = ds.getConnection();`
+2. Druid:
+   1. 步骤
+      1. 导入jar包 druid-1.09.jar
+      2. 定义配置文件
+         1. 是properties形式
+         2. 可以是任意名称，任意路径
+      3. 获取数据库连接池对象：通过工厂类来获取 
